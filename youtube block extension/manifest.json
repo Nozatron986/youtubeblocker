@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Home Blocker",
+  "version": "1.0.0",
+  "description": "Hide videos on YouTube home page until a 60 second hold unlocks it.",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://www.youtube.com/*"
+  ],
+  "action": {
+    "default_title": "YouTube Home Blocker",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.youtube.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}
