@@ -31,6 +31,26 @@ function ensureStyleElement() {
       border: 1px solid #3d3d3d;
       border-radius: 12px;
     }
+
+    html.ythb-blocked ytd-watch-flexy #secondary,
+    html.ythb-blocked ytd-watch-flexy #related,
+    html.ythb-blocked ytd-watch-next-secondary-results-renderer {
+      display: none !important;
+    }
+
+    html.ythb-blocked ytd-watch-flexy #secondary-inner::before {
+      content: "Recommended videos are blocked while this extension is active.";
+      display: block;
+      margin: 12px 0;
+      padding: 12px 14px;
+      text-align: center;
+      font-size: 14px;
+      line-height: 1.4;
+      color: #fff;
+      background: #202020;
+      border: 1px solid #3d3d3d;
+      border-radius: 10px;
+    }
   `;
 
   document.documentElement.appendChild(style);
@@ -41,10 +61,14 @@ function isYouTubeHome() {
   return window.location.hostname === "www.youtube.com" && window.location.pathname === "/";
 }
 
+function isYouTubeWatchPage() {
+  return window.location.hostname === "www.youtube.com" && window.location.pathname === "/watch";
+}
+
 function applyBlockState(enabled) {
   ensureStyleElement();
 
-  if (enabled && isYouTubeHome()) {
+  if (enabled && (isYouTubeHome() || isYouTubeWatchPage())) {
     document.documentElement.classList.add("ythb-blocked");
   } else {
     document.documentElement.classList.remove("ythb-blocked");
