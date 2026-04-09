@@ -1,5 +1,6 @@
 const STYLE_ID = "yt-home-blocker-style";
 const STORAGE_KEY = "blockEnabled";
+let blockEnabledState = true;
 
 function ensureStyleElement() {
   let style = document.getElementById(STYLE_ID);
@@ -34,7 +35,10 @@ function ensureStyleElement() {
 
     html.ythb-blocked ytd-watch-flexy #secondary,
     html.ythb-blocked ytd-watch-flexy #related,
-    html.ythb-blocked ytd-watch-next-secondary-results-renderer {
+    html.ythb-blocked ytd-watch-next-secondary-results-renderer,
+    html.ythb-blocked ytd-watch-flexy #secondary.ytd-watch-flexy,
+    html.ythb-blocked ytd-watch-flexy #related.ytd-watch-flexy,
+    html.ythb-blocked #items.ytd-watch-next-secondary-results-renderer {
       display: none !important;
     }
 
@@ -67,12 +71,41 @@ function isYouTubeWatchPage() {
 
 function applyBlockState(enabled) {
   ensureStyleElement();
+  blockEnabledState = enabled;
 
   if (enabled && (isYouTubeHome() || isYouTubeWatchPage())) {
     document.documentElement.classList.add("ythb-blocked");
+    if (isYouTubeWatchPage()) {
+      forceHideWatchRecommendations();
+    }
   } else {
     document.documentElement.classList.remove("ythb-blocked");
+    clearForcedWatchHides();
   }
+}
+
+function forceHideWatchRecommendations() {
+  const selectors = [
+    "ytd-watch-flexy #secondary",
+    "ytd-watch-flexy #related",
+    "ytd-watch-next-secondary-results-renderer",
+    "#secondary.ytd-watch-flexy",
+    "#related.ytd-watch-flexy"
+  ];
+
+  selectors.forEach((selector) => {
+    document.querySelectorAll(selector).forEach((el) => {
+      el.style.setProperty("display", "none", "important");
+      el.setAttribute("data-ythb-hidden", "1");
+    });
+  });
+}
+
+function clearForcedWatchHides() {
+  document.querySelectorAll("[data-ythb-hidden='1']").forEach((el) => {
+    el.style.removeProperty("display");
+    el.removeAttribute("data-ythb-hidden");
+  });
 }
 
 function refreshFromStorage() {
@@ -85,12 +118,23 @@ function refreshFromStorage() {
 function watchNavigation() {
   let currentHref = window.location.href;
   setInterval(() => {
+    if (blockEnabledState && isYouTubeWatchPage()) {
+      forceHideWatchRecommendations();
+    }
     if (window.location.href !== currentHref) {
       currentHref = window.location.href;
       refreshFromStorage();
     }
   }, 500);
 }
+
+const observer = new MutationObserver(() => {
+  if (blockEnabledState && isYouTubeWatchPage()) {
+    forceHideWatchRecommendations();
+  }
+});
+
+observer.observe(document.documentElement, { childList: true, subtree: true });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName !== "local" || !changes[STORAGE_KEY]) {
