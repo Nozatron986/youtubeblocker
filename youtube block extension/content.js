@@ -1,5 +1,6 @@
 const STYLE_ID = "yt-home-blocker-style";
 const STORAGE_KEY = "blockEnabled";
+const WATCH_NOTICE_ID = "ythb-watch-notice";
 let blockEnabledState = true;
 
 function ensureStyleElement() {
@@ -33,17 +34,14 @@ function ensureStyleElement() {
       border-radius: 12px;
     }
 
-    html.ythb-blocked ytd-watch-flexy #secondary,
     html.ythb-blocked ytd-watch-flexy #related,
     html.ythb-blocked ytd-watch-next-secondary-results-renderer,
-    html.ythb-blocked ytd-watch-flexy #secondary.ytd-watch-flexy,
-    html.ythb-blocked ytd-watch-flexy #related.ytd-watch-flexy,
-    html.ythb-blocked #items.ytd-watch-next-secondary-results-renderer {
+    html.ythb-blocked #items.ytd-watch-next-secondary-results-renderer,
+    html.ythb-blocked ytd-watch-flexy #secondary-inner > *:not(#ythb-watch-notice) {
       display: none !important;
     }
 
-    html.ythb-blocked ytd-watch-flexy #secondary-inner::before {
-      content: "Recommended videos are blocked while this extension is active.";
+    html.ythb-blocked #ythb-watch-notice {
       display: block;
       margin: 12px 0;
       padding: 12px 14px;
@@ -85,12 +83,13 @@ function applyBlockState(enabled) {
 }
 
 function forceHideWatchRecommendations() {
+  ensureWatchNotice();
+
   const selectors = [
-    "ytd-watch-flexy #secondary",
+    "ytd-watch-flexy #secondary-inner > *:not(#ythb-watch-notice)",
     "ytd-watch-flexy #related",
     "ytd-watch-next-secondary-results-renderer",
-    "#secondary.ytd-watch-flexy",
-    "#related.ytd-watch-flexy"
+    "#items.ytd-watch-next-secondary-results-renderer"
   ];
 
   selectors.forEach((selector) => {
@@ -101,11 +100,30 @@ function forceHideWatchRecommendations() {
   });
 }
 
+function ensureWatchNotice() {
+  const secondaryInner = document.querySelector("ytd-watch-flexy #secondary-inner");
+  if (!secondaryInner) {
+    return;
+  }
+
+  let notice = document.getElementById(WATCH_NOTICE_ID);
+  if (!notice) {
+    notice = document.createElement("div");
+    notice.id = WATCH_NOTICE_ID;
+    notice.textContent = "Recommended videos are blocked while this extension is active.";
+    secondaryInner.prepend(notice);
+  }
+}
+
 function clearForcedWatchHides() {
   document.querySelectorAll("[data-ythb-hidden='1']").forEach((el) => {
     el.style.removeProperty("display");
     el.removeAttribute("data-ythb-hidden");
   });
+  const notice = document.getElementById(WATCH_NOTICE_ID);
+  if (notice) {
+    notice.remove();
+  }
 }
 
 function refreshFromStorage() {
